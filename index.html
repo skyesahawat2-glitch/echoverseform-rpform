@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EchoVerse Studio | Form</title>
+    <link rel="icon" type="image/png" href="EVS-logo-web.png">
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;600&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        :root {
+            --primary: #6366f1;
+            --primary-hover: #4f46e5;
+            --bg-color: #f8fafc;
+            --card-bg: #ffffff;
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+            --input-bg: #f1f5f9;
+            --border-color: #e2e8f0;
+            --radius-container: 24px;
+            --radius-element: 16px;
+        }
+
+        body {
+            font-family: 'Prompt', 'Segoe UI', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            flex-direction: column;
+            overflow-x: hidden;
+        }
+
+        /* ------------------
+           สไตล์ของฟอร์มหลัก
+           ------------------ */
+        .container {
+            background: var(--card-bg);
+            padding: 40px;
+            border-radius: var(--radius-container);
+            width: 100%;
+            max-width: 500px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.05);
+            margin-bottom: 20px;
+            box-sizing: border-box;
+            animation: slideDown 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .container h1, .container h2 { text-align: center; color: var(--primary); margin-top: 0; }
+        
+        .step { display: none; animation: fadeInSlideUp 0.5s forwards; }
+        .step.active { display: block; }
+        .form-group { margin-bottom: 24px; }
+        label { display: block; margin-bottom: 10px; font-weight: 600; color: var(--text-main); }
+        
+        input[type="text"], input[type="number"], select {
+            width: 100%; padding: 14px 18px; border: 2px solid var(--border-color);
+            border-radius: var(--radius-element); background: var(--input-bg);
+            color: var(--text-main); font-size: 15px; box-sizing: border-box; outline: none; transition: 0.3s;
+        }
+        input[type="text"]:focus, input[type="number"]:focus, select:focus {
+            border-color: var(--primary); background: #ffffff; box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.15); transform: translateY(-2px);
+        }
+
+        .radio-group label {
+            display: flex; align-items: center; font-weight: normal; margin-bottom: 12px; cursor: pointer;
+            padding: 14px; border-radius: var(--radius-element); background: var(--input-bg); border: 2px solid transparent; transition: 0.3s;
+        }
+        .radio-group label:hover { transform: scale(1.02); }
+        .radio-group input[type="radio"] { display: none; }
+        .radio-group .custom-radio {
+            width: 20px; height: 20px; border: 2px solid var(--border-color); border-radius: 50%;
+            margin-right: 12px; display: inline-block; position: relative; transition: 0.3s;
+        }
+        .radio-group input[type="radio"]:checked + .custom-radio { border-color: var(--primary); }
+        .radio-group input[type="radio"]:checked + .custom-radio::after {
+            content: ''; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%) scale(1);
+            width: 10px; height: 10px; background: var(--primary); border-radius: 50%;
+        }
+        .radio-group label:has(input[type="radio"]:checked) { background: #ffffff; border-color: var(--primary); box-shadow: 0 4px 12px rgba(99, 102, 241, 0.1); }
+
+        .checkbox-container {
+            display: flex; align-items: flex-start; padding: 16px; background: #ffffff;
+            border: 2px solid var(--border-color); border-radius: var(--radius-element); cursor: pointer; transition: 0.3s;
+        }
+        .checkbox-container:hover { border-color: var(--primary); }
+        .checkbox-container input { display: none; }
+        .custom-checkbox {
+            width: 22px; height: 22px; border: 2px solid var(--border-color); border-radius: 6px;
+            margin-right: 12px; position: relative; transition: 0.3s; flex-shrink: 0; margin-top: 2px;
+        }
+        .checkbox-container input:checked + .custom-checkbox { background: var(--primary); border-color: var(--primary); }
+        .checkbox-container input:checked + .custom-checkbox::after {
+            content: '✔'; color: white; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 14px;
+        }
+
+        button {
+            width: 100%; padding: 16px; background-color: var(--primary); color: white;
+            border: none; border-radius: var(--radius-element); font-size: 16px; font-weight: bold; cursor: pointer; transition: 0.3s;
+        }
+        button:hover { background-color: var(--primary-hover); transform: translateY(-2px); box-shadow: 0 8px 20px rgba(99, 102, 241, 0.3); }
+        .btn-secondary { background-color: #cbd5e1; color: var(--text-main); margin-top: 12px; }
+        .btn-secondary:hover { background-color: #94a3b8; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+        .terms-box { background: var(--input-bg); padding: 20px; border-radius: var(--radius-element); font-size: 14px; line-height: 1.7; margin-bottom: 24px; color: var(--text-muted); border: 1px solid var(--border-color); height: 150px; overflow-y: auto; }
+        .footer { text-align: center; font-size: 13px; color: #94a3b8; padding: 20px; font-weight: 500; }
+
+        /* ------------------
+           สไตล์ของหน้าปิดรับสมัคร
+           ------------------ */
+        .closed-container {
+            background-color: #ffffff;
+            padding: 50px 40px;
+            border-radius: 20px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.04);
+            text-align: center;
+            max-width: 480px;
+            width: 90%;
+            border: 1px solid #f0f0f0;
+            animation: slideDown 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .closed-container .logo {
+            font-size: 18px;
+            font-weight: 600;
+            color: #adb5bd;
+            margin-bottom: 20px;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+        .closed-container h1 {
+            font-size: 22px;
+            font-weight: 600;
+            margin-bottom: 16px;
+            color: #212529;
+            line-height: 1.4;
+        }
+        .closed-container p {
+            font-size: 15px;
+            line-height: 1.7;
+            color: #555555;
+            margin-bottom: 30px;
+        }
+        .closed-container .btn {
+            display: inline-block;
+            padding: 14px 32px;
+            background-color: #2b2b2b;
+            color: #ffffff;
+            text-decoration: none;
+            border-radius: 50px;
+            font-size: 15px;
+            font-weight: 400;
+            transition: all 0.3s ease;
+            width: auto;
+        }
+        .closed-container .btn:hover {
+            background-color: #444444;
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.1);
+            transform: translateY(-2px);
+        }
+        .closed-container .icon {
+            font-size: 50px;
+            margin-bottom: 12px;
+            animation: float 3s ease-in-out infinite;
+        }
+
+        .btn-discord {
+            display: inline-block;
+            margin-top: 15px;
+            padding: 14px 32px;
+            background-color: #5865F2; /* สีน้ำเงินของ Discord */
+            color: #ffffff;
+            text-decoration: none;
+            border-radius: var(--radius-element);
+            font-size: 16px;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(88, 101, 242, 0.3);
+        }
+        .btn-discord:hover {
+            background-color: #4752c4;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(88, 101, 242, 0.4);
+        }
+        
+        @keyframes float { 0% { transform: translateY(0px); } 50% { transform: translateY(-8px); } 100% { transform: translateY(0px); } }
+        @keyframes slideDown { from { opacity: 0; transform: translateY(-30px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes fadeInSlideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+</head>
+<body>
+
+    <!-- ==================== ส่วนแบบฟอร์มหลัก ==================== -->
+    <div class="container" id="form-section">
+        
+        <!-- หน้าที่ 1 -->
+        <div id="step-1" class="step active">
+            <h1>EchoVerse Studio</h1>
+            <p style="text-align: center; color: var(--text-muted); margin-bottom: 30px;">แบบฟอร์มสมัครเข้าร่วม RolePlay</p>
+            
+            <div class="form-group">
+                <label>1. คุณชื่อเล่นว่าอะไร (ชื่อที่อยากให้เรียก)</label>
+                <input type="text" id="nickname" placeholder="กรอกชื่อเล่นของคุณ" required>
+            </div>
+
+            <div class="form-group">
+                <label>2. คุณอายุเท่าไหร่ (12 ปีขึ้นไป)</label>
+                <input type="number" id="age" min="12" placeholder="ระบุอายุ" required>
+            </div>
+
+            <div class="form-group">
+                <label>3. คุณต้องการโรลตำแหน่งอะไร</label>
+                <div class="radio-group">
+                    <label>
+                        <input type="radio" name="role" value="นักเรียน (อบิส/abyss)" onchange="toggleSubject()">
+                        <span class="custom-radio"></span> นักเรียน (อบิส/abyss)
+                    </label>
+                    <label>
+                        <input type="radio" name="role" value="ครู (มนุษย์)" onchange="toggleSubject()">
+                        <span class="custom-radio"></span> ครู (มนุษย์)
+                    </label>
+                </div>
+            </div>
+
+            <div class="form-group" id="subject-group" style="display: none;">
+                <label>คุณอยากเป็นครูวิชาอะไร?</label>
+                <select id="subject">
+                    <option value="">-- โปรดเลือกวิชา --</option>
+                    <option value="คณิตศาสตร์">วิชา คณิตศาสตร์</option>
+                    <option value="สังคมศึกษา">วิชา สังคมศึกษา</option>
+                    <option value="มนุษย์ศาสตร์">วิชา มนุษย์ศาสตร์</option>
+                    <option value="วิทยาศาสตร์">วิชา วิทยาศาสตร์</option>
+                    <option value="วิศวกรรมศาสตร์">วิชา วิศวกรรมศาสตร์</option>
+                </select>
+            </div>
+
+            <button onclick="goToStep(2)">ถัดไป</button>
+        </div>
+
+        <!-- หน้าที่ 2 -->
+        <div id="step-2" class="step">
+            <h2>เงื่อนไขการเข้าร่วม</h2>
+            <div class="terms-box">
+                1. ผู้ที่จะเข้าร่วมต้องมีอายุ 12 ปีขึ้นไป (ต่ำกว่านี้ต้องพิจารณาก่อน)<br>
+                2. ผู้ที่จะเข้าร่วมสามารถเล่นตามเนื้อเรื่องได้โดยไม่ออกนอกบทบาทจนเกินไป<br>
+                3. ผู้ที่จะเข้าร่วมต้องมีวุฒิภาวะพอที่จะอยู่ร่วมกับผู้อื่นได้โดยสันติ<br>
+                4. เนื้อหาทั้งหมดจะต้องไม่พาดพิงหรือเหยียด เช่น เชื้อชาติ สีผิว เพศ สติปัญญา รูปร่างหน้าตา ความชอบ<br>
+                5. หากอยู่ใน community discord โปรดทำตามกฏซึ่งสามารถอ่านได้จาก ห้อง "กฏคอมมู" ใน discord<br>
+                6. เนื้อหาที่ผู้เล่นเป็นคนจัดทำขึ้น ทางสตูดิโอจะไม่มีความรับผิดชอบร่วม ทั้งหมดทุกกรณี
+            </div>
+
+            <div class="form-group">
+                <label class="checkbox-container">
+                    <input type="checkbox" id="agree"> 
+                    <span class="custom-checkbox"></span>
+                    <span style="font-weight: normal; font-size: 14px; margin-top: 2px;">ฉันได้อ่าน "เงื่อนไขในการเข้าร่วม" เป็นที่เรียบร้อยแล้วและสามารถยอมรับและทำตามเงื่อนไขได้ (เนะนำให้อ่านก่อนติก)</span>
+                </label>
+            </div>
+
+            <div class="form-group">
+                <label>5. โปรดป้อน Discord ID ของท่าน</label>
+                <input type="text" id="discord" placeholder="เช่น: username#1234 หรือ username">
+            </div>
+
+            <button id="submitBtn" onclick="submitForm()">
+                <span>ส่งใบสมัคร</span>
+            </button>
+            <button class="btn-secondary" onclick="goToStep(1)">ย้อนกลับ</button>
+        </div>
+
+        <!-- หน้าที่ 3: ข้อความตอบกลับ -->
+        <div id="step-3" class="step" style="text-align: center; padding: 30px 0;">
+            <div style="font-size: 70px; margin-bottom: 20px; line-height: 1;">🎉</div>
+            <h2 style="color: #10b981; font-size: 28px;">ส่งข้อมูลสำเร็จ!</h2>
+            <p style="color: var(--text-muted); line-height: 1.6; font-size: 15px; margin-bottom: 10px;">ขอขอบคุณที่คุณสนใจร่วมเป็นหนึ่งในผู้เล่นของเรา หากมีข้อมูลอัปเดตเพิ่มเติมหรือคุณผ่านเกณฑ์ของเรา เราจะแจ้งให้คุณทราบผ่าน discord ของท่าน</p>
+            
+            <!-- ปุ่มเข้า Discord -->
+            <a href="https://discord.gg/Kn7xWUkgJT" target="_blank" class="btn-discord">
+                เข้าร่วม Discord ของเรา
+            </a>
+        </div>
+    </div>
+
+    <!-- ==================== ส่วนหน้าปิดรับสมัคร (ซ่อนไว้ก่อน) ==================== -->
+    <div class="closed-container" id="closed-section" style="display: none;">
+        <div class="logo">EchoVerse Studio</div>
+        <div class="icon">✨</div>
+        <h1>ขอบคุณที่สนใจมาร่วมเดินทาง<br>ไปกับพวกเรานะ!</h1>
+        <p>ทางทีมงานดีใจมากๆ ที่คุณอยากมาเป็นส่วนหนึ่งในโลก <strong>Minecraft RolePlay</strong> ของเรา แต่ต้องขออภัยจริงๆ ที่ตอนนี้โควต้ารอบนี้เต็ม/ปิดรับสมัครลงแล้ว 🥺<br><br>
+        แต่ไม่ต้องเสียดายน้า! แวะเข้ามาพูดคุยและรอติดตามข่าวสารในคอมมูนิตี้ของเราไว้ก่อนได้เลย 🤍</p>
+        <a href="https://discord.gg/Kn7xWUkgJT" target="_blank" class="btn">เข้า Discord ไปพูดคุยกันก่อนได้นะ!</a>
+    </div>
+
+    <div class="footer">
+        EchoVerse Studio All Right Reserved<br>Not Affordable With Mojang AB
+    </div>
+
+    <script>
+        // supabase config
+        const SUPABASE_URL = 'https://uyafyxjijsnpoeohzxur.supabase.co';
+        const SUPABASE_KEY = 'sb_publishable_2jchaTIQkA3MfHctiYqEaw_I48dEB3A';
+        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        // pull status
+        window.onload = async function() {
+            const { data, error } = await supabaseClient.from('settings').select('*');
+            
+            if (!error && data) {
+                // form status checksum
+                const formStatus = data.find(s => s.setting_key === 'form_status');
+                if (formStatus && formStatus.is_open === false) {
+                    // if status == formclose = show formisclose page
+                    document.getElementById('form-section').style.display = 'none';
+                    document.getElementById('closed-section').style.display = 'block';
+                    return; // return
+                }
+
+                // ฟังก์ชันช่วยปิดตัวเลือกวิชา
+                const disableSubjectOption = (val) => {
+                    const el = document.querySelector(`option[value="${val}"]`);
+                    if(el) { el.disabled = true; el.innerText += ' (ปิดรับสมัคร)'; }
+                };
+
+                // ฟังก์ชันช่วยปิดตัวเลือกโรลหลัก
+                const disableRoleRadio = (val) => {
+                    const el = document.querySelector(`input[value="${val}"]`);
+                    if(el) {
+                        el.disabled = true;
+                        const label = el.parentElement;
+                        label.style.opacity = '0.5'; label.style.cursor = 'not-allowed';
+                        label.innerHTML += ' <span style="color: #ef4444; font-size: 13px; font-weight: bold; margin-left: 10px;">(ปิดรับสมัคร)</span>';
+                    }
+                };
+
+                // 2. เช็คสถานะรายอัน
+                data.forEach(setting => {
+                    if (setting.is_open === false) {
+                        switch(setting.setting_key) {
+                            case 'role_student': disableRoleRadio('นักเรียน (อบิส/abyss)'); break;
+                            case 'role_teacher': disableRoleRadio('ครู (มนุษย์)'); break;
+                            case 'subject_math': disableSubjectOption('คณิตศาสตร์'); break;
+                            case 'subject_social': disableSubjectOption('สังคมศึกษา'); break;
+                            case 'subject_human': disableSubjectOption('มนุษย์ศาสตร์'); break;
+                            case 'subject_science': disableSubjectOption('วิทยาศาสตร์'); break;
+                            case 'subject_engineer': disableSubjectOption('วิศวกรรมศาสตร์'); break;
+                        }
+                    }
+                });
+            }
+        };
+
+        function toggleSubject() {
+            const role = document.querySelector('input[name="role"]:checked');
+            const subjectGroup = document.getElementById('subject-group');
+            if (role && role.value === 'ครู (มนุษย์)') {
+                subjectGroup.style.display = 'block';
+                subjectGroup.style.animation = 'fadeInSlideUp 0.4s ease forwards';
+            } else {
+                subjectGroup.style.display = 'none';
+                document.getElementById('subject').value = ""; 
+            }
+        }
+
+        function goToStep(stepNumber) {
+            if(stepNumber === 2) {
+                const nickname = document.getElementById('nickname').value;
+                const age = document.getElementById('age').value;
+                const roleInput = document.querySelector('input[name="role"]:checked');
+
+                if (!nickname || !age) { alert("กรุณากรอก ชื่อเล่น และ อายุ ให้ครบถ้วนครับ"); return; }
+                if (!roleInput) { alert("กรุณาเลือกตำแหน่งที่คุณต้องการโรลเพลย์ครับ"); return; }
+                
+                if (roleInput.value === 'ครู (มนุษย์)') {
+                    const subject = document.getElementById('subject').value;
+                    if (!subject) { alert("คุณเลือกเป็นครู กรุณาเลือกวิชาที่ต้องการสอนด้วยครับ"); return; }
+                }
+            }
+            document.querySelectorAll('.step').forEach(step => step.classList.remove('active'));
+            document.getElementById(`step-${stepNumber}`).classList.add('active');
+        }
+
+        async function submitForm() {
+            const agree = document.getElementById('agree').checked;
+            const discord = document.getElementById('discord').value;
+
+            if (!agree) { alert("กรุณากดยอมรับเงื่อนไขการเข้าร่วมก่อนส่งใบสมัครครับ"); return; }
+            if (!discord || discord.trim() === '') { alert("กรุณากรอก Discord ID ของคุณด้วยครับ"); return; }
+
+            const roleVal = document.querySelector('input[name="role"]:checked').value;
+            const subjectVal = document.getElementById('subject').value;
+
+            // ตรวจสอบเช็คฐานข้อมูลอีกครั้งก่อนส่ง
+            const { data: latestSettings } = await supabaseClient.from('settings').select('*');
+            if (latestSettings) {
+                // เช็คว่าฟอร์มปิดไหม
+                if (latestSettings.find(s => s.setting_key === 'form_status' && !s.is_open)) {
+                    document.getElementById('form-section').style.display = 'none';
+                    document.getElementById('closed-section').style.display = 'block';
+                    return;
+                }
+                // เช็คว่า Role หลักปิดไหม
+                const roleKey = roleVal === 'ครู (มนุษย์)' ? 'role_teacher' : 'role_student';
+                if (latestSettings.find(s => s.setting_key === roleKey && !s.is_open)) {
+                    alert("ขออภัยครับ ตำแหน่งที่คุณเลือกเพิ่งถูกปิดรับสมัครไป"); window.location.reload(); return;
+                }
+                // เช็คว่าวิชาปิดไหม
+                if (roleVal === 'ครู (มนุษย์)' && subjectVal) {
+                    let subjKey = '';
+                    if (subjectVal === 'คณิตศาสตร์') subjKey = 'subject_math';
+                    if (subjectVal === 'สังคมศึกษา') subjKey = 'subject_social';
+                    if (subjectVal === 'มนุษย์ศาสตร์') subjKey = 'subject_human';
+                    if (subjectVal === 'วิทยาศาสตร์') subjKey = 'subject_science';
+                    if (subjectVal === 'วิศวกรรมศาสตร์') subjKey = 'subject_engineer';
+                    
+                    if (latestSettings.find(s => s.setting_key === subjKey && !s.is_open)) {
+                        alert(`ขออภัยครับ วิชานี้เพิ่งถูกปิดรับสมัครไปเมื่อสักครู่`); window.location.reload(); return;
+                    }
+                }
+            }
+
+            const data = {
+                nickname: document.getElementById('nickname').value,
+                age: parseInt(document.getElementById('age').value),
+                role: roleVal,
+                subject: subjectVal || null,
+                discord_id: discord
+            };
+
+            const btn = document.getElementById('submitBtn');
+            btn.innerHTML = '<span>กำลังส่งข้อมูล...</span>';
+            btn.style.pointerEvents = 'none';
+
+            const { error } = await supabaseClient.from('applications').insert([data]);
+
+            if (error) {
+                alert("เกิดข้อผิดพลาดในการส่งข้อมูล: " + error.message);
+                btn.innerHTML = '<span>ส่งใบสมัคร</span>';
+                btn.style.pointerEvents = 'auto';
+            } else {
+                goToStep(3); 
+            }
+        }
+    </script>
+</body>
+</html>
